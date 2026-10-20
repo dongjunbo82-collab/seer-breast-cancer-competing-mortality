@@ -1,0 +1,100 @@
+# SEER breast cancer competing mortality analysis
+
+Statistical source code for five-year sex differences in breast cancer and competing-cause mortality, with detailed cause decomposition and continuous-age analyses.
+
+This repository contains source code, an input-column schema, and execution instructions only. It contains no manuscript, patient records, completed datasets, fitted models, numerical results, figures, credentials, or author contact details. Obtain SEER records independently through the authorized access process: https://seer.cancer.gov/data/access.html. A data-use agreement is required; do not upload records or outputs to this repository.
+
+## Current analysis
+
+The principal workflow is `work/revision_20261019/`: seven competing hazards, four imputation chains, 40 completed cohorts, sex-specific age terms where specified, and standardization to a pooled male case mix. `work/cbc_robustness20/` contains alternative-knot sensitivity analyses and scalar chain diagnostics. Directory dates identify source versions, not distinct study populations.
+
+The analysis is exploratory. Standardized comparisons describe a common measured case mix; reference restrictions do not eliminate model extrapolation. Ten retained completions per chain limit ESS and split-Rhat assessment. Alternative-knot models reuse the primary completions and do not re-impute under each alternative formula.
+
+## Requirements and inputs
+
+Developed with R 4.6.1 and Python 3. R packages: data.table, splines, nnet, MASS, survival, ggplot2, patchwork, svglite, ragg, posterior (diagnostics developed with 1.7.0). Python preparation uses the standard library; the optional life-table parser also requires xlrd. `Rscript setup.R` checks R dependencies and prepares local output directories; it does not install software or packages.
+
+Export formatted SEER case listings with SEER*Stat 9.0.43.0. `export_schema.json` specifies the two input schemas and exact column order. These are column definitions, not patient data. Set `SEER_BASE_EXPORT` and `SEER_COD_EXPORT` to your local 30-column and 34-column CSV files, with corresponding records in identical order. Existing database and selection versions must match the study; the code does not download SEER data or authenticate to SEER.
+
+Run commands from the repository root. The default data root is `.`; `SEER_ANALYSIS_ROOT` may point to a different reconstruction directory. The primary result directory defaults to `outputs/revision_20261019`; `SEER_REVISION_OUT` can override it and must be consistent across primary scripts. Preparation and contextual scripts use repository-relative `work/` paths. New spline diagnostics write to `outputs/cbc_robustness20`.
+
+## Execution order
+
+```sh
+Rscript setup.R
+python work/audit_cod_pair.py
+python work/build_extended.py
+python work/build_cod_extended.py
+Rscript work/cbc_robustness20/prepare_current_cohort.R
+```
+
+Run each imputation chain once with chain argument 1, 2, 3, or 4:
+
+```sh
+Rscript work/revision_20261019/impute.R 1 40
+Rscript work/revision_20261019/impute.R 2 40
+Rscript work/revision_20261019/impute.R 3 40
+Rscript work/revision_20261019/impute.R 4 40
+Rscript work/revision_20261019/analyze.R baseline
+```
+
+For each chain argument 1–4, run both commands below after its imputations exist. The chain scripts poll for incomplete jobs and can run for substantial time; launch each chain only once in the same output directory.
+
+```sh
+Rscript work/revision_20261019/analyze.R mi 1
+Rscript work/revision_20261019/compare_models.R 1
+```
+
+After all four chains and comparisons finish:
+
+```sh
+Rscript work/revision_20261019/pool.R
+Rscript work/revision_20261019/support_grid.R
+Rscript work/revision_20261019/validate_likelihood.R
+Rscript work/revision_20261019/audit.R
+Rscript work/revision_20261019/figures.R
+```
+
+The comparison script reads only function definitions from `work/models.R`; do not run that historical engine before the current seven-cause analysis.
+
+For alternative knots, run `Rscript work/cbc_robustness20/robustness20.R CHAIN 10` separately for CHAIN 1, 2, 3, and 4, then:
+
+```sh
+Rscript work/cbc_robustness20/pool_robustness20.R
+Rscript work/cbc_robustness20/chain_diagnostics20.R
+```
+
+Scalar diagnostics require locally generated per-imputation estimates. No aggregate inputs are bundled in this code-only release.
+
+## Analysis-to-output map
+
+| Source | Local output/purpose |
+| --- | --- |
+| `analyze.R`, `pool.R` | `revised_MI.csv`: standardized risks, cause differences, continuous age, subgroup, restricted references; principal Tables 2–3, supplemental S4–S8/S12 |
+| `analyze.R baseline` | `observed_AJ.csv`: observed risks; `revised_sensitivity.csv`: complete-case and unknown-category checks |
+| `compare_models.R`, `pool.R` | `model_comparison.csv`: shared-age/sex-specific-age three-cause comparisons |
+| `impute.R`, `pool.R` | category traces, FMI and Monte Carlo diagnostics |
+| `support_grid.R` | `support_grid.csv`, `support_summary.csv`: prediction support |
+| `figures.R` | current principal and diagnostic figure generation |
+| `robustness20.R`, `pool_robustness20.R` | two alternative age-knot specifications, complete age-grid estimates, fit checks; supplemental S16 |
+| `chain_diagnostics20.R` | lag-one correlation, basic unsplit ESS, split Rhat and correlation-aware MCSE; supplemental S17 |
+| `validate_likelihood.R`, `audit.R`, `baseline_audit.R`, `benchmark_likelihood.R` | numerical checks and optional fit audits; require locally generated data/fits |
+
+## Contextual analyses and supporting utilities
+
+These scripts use separate three-cause specifications and must not replace the current principal workflow. They are retained only for context and necessary function dependencies.
+
+- `models.R`: three-cause functions and contextual base workflow. `LOAD_ONLY=1` loads its data/functions without executing the final analysis block; the current comparison script instead parses function definitions only.
+- `value_add_analysis.R`: common three-year pre-pandemic window and age-stratum checks, corresponding to supplemental S13 context.
+- `stage_trends.R`: stage-distribution models, supplemental S14 context.
+- `sensitivity.R`: contextual three-cause checks, including the under-85 comparison needed by `background.R`.
+- `get_lifetables.py`, `life_parse.py`, `background.R`: download public CDC life tables, parse annual death probabilities, and calculate descriptive population benchmarks, supplemental S15 context. Run the fetch/parser before `background.R`; run `sensitivity.R` first to generate its under-85 observed comparison. These are descriptive benchmarks, not formal excess-mortality models.
+- `audit_seer.py`, `summarize_followup.py`: local input/cohort and follow-up summaries. Any generated audit JSON or CSV may contain sensitive source values and must remain local.
+
+For contextual workflows run `Rscript work/models.R` once to generate contextual base fits, then the needed contextual script. This creates local records, models and outputs covered by `.gitignore`; none are repository content. Existing output files can be reused by some scripts, so use a clean reconstruction directory for a full rerun. Output filenames in source retain historical numbering; the table map above identifies their current use.
+
+## Publication boundary and validation
+
+Only explicitly allowlisted source files, this README, `.gitignore`, and `export_schema.json` are intended for publication. The input schema includes record-key column names solely to define matching; no identifier values are provided. Do not add local inputs, fitted objects, traces, aggregates, plots, logs, personal paths, or contact details. `.gitignore` is a convenience and does not replace review of staged files.
+
+The code-only release is checked for Python/R syntax, local source dependencies, forbidden file types and obvious credentials/contact paths. The underlying analyses were executed in the private research workspace. A full rerun cannot be performed from this repository alone without authorized SEER input files.
