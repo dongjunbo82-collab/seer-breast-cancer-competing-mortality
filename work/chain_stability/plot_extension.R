@@ -1,0 +1,8 @@
+suppressPackageStartupMessages({library(data.table);library(ggplot2)})
+dest<-Sys.getenv('SEER_EXTENSION_OUT','outputs/chain_stability');x<-fread(file.path(dest,'extended_chain_per_completion.csv'))
+y<-x[(analysis=='overall' & outcome%in%c('all','other_total','cardiovascular'))|(analysis=='age75_minus50' & outcome%in%c('other_total','cardiovascular'))|(analysis=='age' & age==50 & outcome=='cardiovascular')]
+y[,label:=fcase(analysis=='overall'&outcome=='all','Overall all-cause difference',analysis=='overall'&outcome=='other_total','Overall other-cause difference',analysis=='overall'&outcome=='cardiovascular','Overall cardiovascular difference',analysis=='age75_minus50'&outcome=='other_total','Other-cause age contrast',analysis=='age75_minus50'&outcome=='cardiovascular','Cardiovascular age contrast',default='Cardiovascular difference at age 50')]
+p<-ggplot(y,aes(iter,estimate*100,colour=factor(chain)))+geom_line(linewidth=.4)+geom_point(size=.65)+facet_wrap(~label,scales='free_y',ncol=2)+scale_colour_manual(values=c('#0072B2','#D55E00','#009E73','#CC79A7'),name='Chain')+labs(x='Sweep number',y='Risk difference (percentage points)',caption='Extended-chain scalar estimates. Panel scales differ; traces describe imputation variability, not confidence intervals.')+theme_bw(base_size=10)+theme(legend.position='bottom',panel.grid.minor=element_blank(),strip.background=element_rect(fill='grey95'),plot.caption=element_text(size=8,hjust=0))
+ggsave(file.path(dest,'Extended_Chain_Traces.png'),p,width=7.4,height=7.2,dpi=300)
+ggsave(file.path(dest,'Extended_Chain_Traces.svg'),p,width=7.4,height=7.2,device=svglite::svglite)
+ggsave(file.path(dest,'Extended_Chain_Traces.tif'),p,width=7.4,height=7.2,dpi=600,compression='lzw')

@@ -98,3 +98,25 @@ For contextual workflows run `Rscript work/models.R` once to generate contextual
 Only explicitly allowlisted source files, this README, `.gitignore`, and `export_schema.json` are intended for publication. The input schema includes record-key column names solely to define matching; no identifier values are provided. Do not add local inputs, fitted objects, traces, aggregates, plots, logs, personal paths, or contact details. `.gitignore` is a convenience and does not replace review of staged files.
 
 The code-only release is checked for Python/R syntax, local source dependencies, forbidden file types and obvious credentials/contact paths. The underlying analyses were executed in the private research workspace. A full rerun cannot be performed from this repository alone without authorized SEER input files.
+
+
+## Extended-chain stability check
+
+After the current primary analysis is complete, continue each of the four chains from its saved sweep-40 completed cohort:
+
+```sh
+Rscript work/chain_stability/extend_chains.R 1 120
+Rscript work/chain_stability/extend_chains.R 2 120
+Rscript work/chain_stability/extend_chains.R 3 120
+Rscript work/chain_stability/extend_chains.R 4 120
+Rscript work/chain_stability/pool_extension.R 120
+Rscript work/chain_stability/plot_extension.R
+```
+
+The original random-number states were not available. The saved completed covariates at sweep 40 provide the starting chain states; continuation uses independent seeds `20261020 + 100000 * chain`. This continues the same transition kernel with fresh random streams rather than reproducing the original streams. Each continuation saves its completed covariate state and RNG state locally after each sweep; rerunning the same command resumes that checkpoint. Checkpoints contain patient-level covariates and must never be shared.
+
+The first 20 continuation sweeps are excluded. Key overall and age-50/75 effects are evaluated at sweeps 62,64,...,120, yielding 30 retained completions per chain (120 total). They are pooled separately and compared with the principal 40-completion analysis; they do not replace the main analysis or regenerate the alternative-knot models. The continuation uses the existing vectorized exact category likelihood. `validate_kernel.R` compares it with explicit category-by-category likelihood evaluation using locally available primary fits.
+
+The output directory defaults to `outputs/chain_stability` and can be changed with `SEER_EXTENSION_OUT`. It contains only local runtime products, including private checkpoints. The code repository supplies no diagnostic numbers or supplementary CSV files: numerical Supplementary Results accompany the article separately. Low MCSE is not a convergence criterion; examine split Rhat, effective sample size, chain traces, and changes in key estimates and standard errors together. The scalar summaries cover overall sex differences, ages 50 and 75, and their contrasts; this check does not refit every subgroup or restricted-reference analysis.
+
+The extended-chain comparison corresponds to supplementary Table S18 and Figure S9. The full 36-estimand comparison and category/trace CSVs are submitted as independent Supplementary Results attachments with the article, not as files in this repository.
