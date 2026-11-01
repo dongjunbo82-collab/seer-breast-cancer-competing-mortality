@@ -4,6 +4,10 @@ Statistical source code for five-year sex differences in breast cancer and compe
 
 This repository contains source code, an input-column schema, and execution instructions only. It contains no manuscript, patient records, completed datasets, fitted models, numerical results, figures, credentials, or author contact details. Obtain SEER records independently through the authorized access process: https://seer.cancer.gov/data/access.html. A data-use agreement is required; do not upload records or outputs to this repository.
 
+## Independent recent cardiovascular age checks
+
+Run `Rscript work/jjco_recent_cv/analyse.R` after authorized input reconstruction. It fits three competing hazards in 2015–2018 alone (breast cancer, cardiovascular and all remaining deaths), with sex-specific log-linear age, complete-case and unknown-category specifications; it also estimates sex/age-group Aalen–Johansen risks. Outputs include private fitted objects that must remain local. This checks direction and magnitude under a simpler age form; it does not validate an exact historical spline or a screening threshold. Table S22 reports observed case mix; Table S23 reports recent male non-age standardization. `clinical_other.R` then uses the original 40 saved fits to supply noncardiovascular other-cause risks at ages 50/65/75 for Table S21, retaining prediction covariance. These scripts require locally generated authorized inputs and original fits, not files supplied by the repository.
+
 ## Current JJCO additions
 
 `work/jjco_value_revision/background_matched.R` supplies national background context. `work/jjco_robustness_final/analyse.R` runs independent temporal and boundary checks; `shared_reference.R` predicts at a common recent reference. `work/jjco_clinical_final/nonCOVID.R` sums non-COVID other-cause cumulative incidence while retaining COVID as a competing event and preserving covariance. Ages 65/70 are in the original grid. These scripts require authorized inputs and saved principal fits. Set SEER_ANALYSIS_ROOT locally and run from the repository root. No results or patient records are distributed.
