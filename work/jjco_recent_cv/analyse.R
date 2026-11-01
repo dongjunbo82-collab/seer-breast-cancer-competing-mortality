@@ -1,7 +1,7 @@
 # Set SEER_ANALYSIS_ROOT to your authorized local input project.
 
 source('work/revision_20261019/engine.R');library(survival);setDTthreads(1)
-w<-'work/jjco_recent_cv';dir.create(w,showWarnings=FALSE)
+w<-Sys.getenv('RECENT_CV_OUT','work/jjco_recent_cv');dir.create(w,showWarnings=FALSE,recursive=TRUE)
 d<-load_data()[year>=2015];d[,age10:=(age-65)/10];d[,age_group:=cut(age,c(17,54,64,74,Inf),labels=c('18-54','55-64','65-74','75+'))]
 fwrite(d[,.(N=.N,cardiovascular=sum(detail=='cardiovascular'&months<=60),all_deaths=sum(detail%in%causes&months<=60)),by=.(sex,age_group)],file.path(w,'support.csv'))
 ks<-c('breast','cardiovascular','remaining_deaths');d[,endpoint:=fifelse(detail=='breast','breast',fifelse(detail=='cardiovascular','cardiovascular',fifelse(detail%in%causes,'remaining_deaths','censor')))];d[time>5,endpoint:='censor'];d[,time:=pmin(time,5)]
@@ -15,6 +15,7 @@ for(ss in levels(d$sex))for(gg in levels(d$age_group)){
 }
 fwrite(rbindlist(aj),file.path(w,'observed_AJ.csv'))
 form<-~sex*age10+interval+sex:interval+stage+grade+er+race
+if(Sys.getenv('DROP_SEX_INTERVAL','0')=='1')form<-update(form,~.-sex:interval)
 predict3<-function(ff,ref,ss,a){
  p<-length(ff[[1]]$b);K<-3*p;n<-nrow(ref);z<-copy(ref);z[,sex:=factor(ss,levels=levels(ref$sex))];z[,age10:=(a-65)/10]
  S<-rep(1,n);F<-matrix(0,n,3);DS<-matrix(0,n,K);DF<-lapply(1:3,function(k)matrix(0,n,K))

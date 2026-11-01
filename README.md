@@ -4,13 +4,15 @@ Statistical source code for five-year sex differences in breast cancer and compe
 
 This repository contains source code, an input-column schema, and execution instructions only. It contains no manuscript, patient records, completed datasets, fitted models, numerical results, figures, credentials, or author contact details. Obtain SEER records independently through the authorized access process: https://seer.cancer.gov/data/access.html. A data-use agreement is required; do not upload records or outputs to this repository.
 
-## Independent recent cardiovascular age checks
+## Recent-cohort refitting sensitivity analyses
 
 Run `Rscript work/jjco_recent_cv/analyse.R` after authorized input reconstruction. It fits three competing hazards in 2015–2018 alone (breast cancer, cardiovascular and all remaining deaths), with sex-specific log-linear age, complete-case and unknown-category specifications; it also estimates sex/age-group Aalen–Johansen risks. Outputs include private fitted objects that must remain local. This checks direction and magnitude under a simpler age form; it does not validate an exact historical spline or a screening threshold. Table S22 reports observed case mix; Table S23 reports recent male non-age standardization. `clinical_other.R` then uses the original 40 saved fits to supply noncardiovascular other-cause risks at ages 50/65/75 for Table S21, retaining prediction covariance. These scripts require locally generated authorized inputs and original fits, not files supplied by the repository.
 
+To assess annual sex interactions, set `DROP_SEX_INTERVAL=1` and `RECENT_CV_OUT=work/jjco_recent_cv/no_sex_interval`, then rerun `analyse.R`. Keep these outputs separate from the original recent fits. Run `Rscript work/jjco_recent_cv/audit_parameters.R` after both specifications: it exports parameter counts, all coefficients/SEs and covariance diagnostics locally. These are internal sensitivity analyses using original-cohort patients, not external validation. Table S23 includes both specifications; full numerical outputs accompany the article in worksheet24, not here.
+
 ## Current JJCO additions
 
-`work/jjco_value_revision/background_matched.R` supplies national background context. `work/jjco_robustness_final/analyse.R` runs independent temporal and boundary checks; `shared_reference.R` predicts at a common recent reference. `work/jjco_clinical_final/nonCOVID.R` sums non-COVID other-cause cumulative incidence while retaining COVID as a competing event and preserving covariance. Ages 65/70 are in the original grid. These scripts require authorized inputs and saved principal fits. Set SEER_ANALYSIS_ROOT locally and run from the repository root. No results or patient records are distributed.
+`work/jjco_value_revision/background_matched.R` supplies national background context. `work/jjco_robustness_final/analyse.R` runs temporal and boundary sensitivity checks; `shared_reference.R` predicts at a common recent reference. `work/jjco_clinical_final/nonCOVID.R` sums non-COVID other-cause cumulative incidence while retaining COVID as a competing event and preserving covariance. Ages 65/70 are in the original grid. These scripts require authorized inputs and saved principal fits. Set SEER_ANALYSIS_ROOT locally and run from the repository root. No results or patient records are distributed.
 
 ## Current analysis
 
@@ -127,4 +129,4 @@ The first 20 continuation sweeps are excluded. Key overall and age-50/75 effects
 
 The output directory defaults to `outputs/chain_stability` and can be changed with `SEER_EXTENSION_OUT`. It contains only local runtime products, including private checkpoints. The code repository supplies no diagnostic numbers or supplementary CSV files: numerical Supplementary Results accompany the article separately. Low MCSE is not a convergence criterion; examine split Rhat, effective sample size, chain traces, and changes in key estimates and standard errors together. The scalar summaries cover overall sex differences, ages 50 and 75, and their contrasts; this check does not refit every subgroup or restricted-reference analysis.
 
-The extended-chain comparison corresponds to supplementary Table S18 and Figure S9. The full 36-estimand comparison and category/trace CSVs are submitted as independent Supplementary Results attachments with the article, not as files in this repository.
+The extended-chain comparison corresponds to supplementary Table S18 and Figure S8. The full 36-estimand comparison, category diagnostics and traces are provided in the single Supplementary_Results.xlsx submitted with the article (worksheets15–19), not in this repository.
