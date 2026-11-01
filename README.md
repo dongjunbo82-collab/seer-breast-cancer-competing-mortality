@@ -4,6 +4,10 @@ Statistical source code for five-year sex differences in breast cancer and compe
 
 This repository contains source code, an input-column schema, and execution instructions only. It contains no manuscript, patient records, completed datasets, fitted models, numerical results, figures, credentials, or author contact details. Obtain SEER records independently through the authorized access process: https://seer.cancer.gov/data/access.html. A data-use agreement is required; do not upload records or outputs to this repository.
 
+## Current JJCO additions
+
+`work/jjco_value_revision/background_matched.R` supplies national background context. `work/jjco_robustness_final/analyse.R` runs independent temporal and boundary checks; `shared_reference.R` predicts at a common recent reference. `work/jjco_clinical_final/nonCOVID.R` sums non-COVID other-cause cumulative incidence while retaining COVID as a competing event and preserving covariance. Ages 65/70 are in the original grid. These scripts require authorized inputs and saved principal fits. Set SEER_ANALYSIS_ROOT locally and run from the repository root. No results or patient records are distributed.
+
 ## Current analysis
 
 The principal workflow is `work/revision_20261019/`: seven competing hazards, four imputation chains, 40 completed cohorts, sex-specific age terms where specified, and standardization to a pooled male case mix. `work/cbc_robustness20/` contains alternative-knot sensitivity analyses and scalar chain diagnostics. Directory dates identify source versions, not distinct study populations.
